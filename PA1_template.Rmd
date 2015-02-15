@@ -1,25 +1,77 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+Peer Assessment 1
+====================
 
 
-## Loading and preprocessing the data
+```{r, echo = TRUE}
+unzip(zipfile="repdata-data-activity.zip")
+data <- read.csv("activity.csv", header = T)
+```
 
-
-
-## What is mean total number of steps taken per day?
-
-
-
-## What is the average daily activity pattern?
-
-
-
-## Imputing missing values
+Calculate the total number of steps taken per day
+```{r, echo = TRUE}
+data1 = na.omit(data)
+data2 = aggregate(data1$steps, list(Date = data1$date), sum)
+hist(data2$x, main = "Histogram of Total no. of steps taken per day",xlab = "Steps",breaks = 15)
+```
 
 
 
-## Are there differences in activity patterns between weekdays and weekends?
+What is mean total number of steps taken per day?
+
+
+
+```{r, echo = TRUE}
+mean(data1$steps)
+median(data1$steps)
+```
+
+
+What is the average daily activity pattern?
+
+
+```{r, echo = TRUE}
+data2 = aggregate(data1$steps, list(Interval = data1$interval), mean)
+plot(data2$x, data2$interval, type="l", main = "Mean of no. of Steps for all days vs Time-interval",ylab="Number of Steps", xlab="id of interval")
+data2[data2$x == max(data2$x),]
+```
+
+Imputing missing values
+
+```{r, echo = TRUE}
+data1 = na.omit(data)
+meansMatrix =aggregate(data1$steps, list(Interval = data1$interval), mean)
+#Loop thru all rows and check if data$steps is NA
+for (i in 1:nrow(data))
+{
+    if (is.na(data$steps[i])){  
+      #Replace NA with value from meansMatrix
+      data$steps[i] <- meansMatrix[meansMatrix$Interval == as.numeric(data$interval[i]),2]
+    }
+}
+dataAgg = aggregate(data1$steps, list(Date = data1$date), mean)
+hist(dataAgg$x, main = "Histogram of Total no. of steps taken per day(NA:s Replaced)",xlab = "Steps",breaks = 15)
+```
+
+Are there differences in activity patterns between weekdays and weekends?
+
+
+```{r, echo = TRUE}
+library(ggplot2)
+data$date = as.Date(data$date)
+data$Weekday = weekdays(data$date)
+for (i in 1:nrow(data)){
+  if ( data$Weekday[i] %in% c("måndag", "tisdag", "onsdag", "torsdag", "fredag"))
+  {
+    string = "Weekday"
+  }
+  else
+  {
+    string = "Weekend"
+  }
+  data$Daytype[i] = string
+}
+data$Daytype = factor(data$Daytype)
+dataAgg = aggregate(data$steps, list(Intervals = data$interval, Daytype = data$Daytype), mean)
+ggplot(dataAgg, aes(Intervals, x)) + geom_line() + facet_grid(Daytype ~ .) + xlab("Interval")+ ylab("Average No. of Steps")+ labs(title="Avarage No. of steps Weekend vs Weekdays")
+```
+
